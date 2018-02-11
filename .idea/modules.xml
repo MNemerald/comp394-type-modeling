@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/java-type-checker/java-type-checker.iml" filepath="$PROJECT_DIR$/java-type-checker/java-type-checker.iml" />
       <module fileurl="file://$PROJECT_DIR$/python-attr-lookup/python-attr-lookup.iml" filepath="$PROJECT_DIR$/python-attr-lookup/python-attr-lookup.iml" />
     </modules>
   </component>
