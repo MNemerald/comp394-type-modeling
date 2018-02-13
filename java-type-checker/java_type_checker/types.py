@@ -12,12 +12,13 @@ class Type(object):
     def is_subtype_of(self, other):
         """ True if this type can be used where the other type is expected.
         """
-        if other is self or other in self.direct_supertypes or self is Type.null:
+        if other is self or other in self.direct_supertypes:
             return True
 
         for thing in self.direct_supertypes:
             if thing.is_subtype_of(other):
                 return True
+
         return False
 
     def is_supertype_of(self, other):
@@ -72,11 +73,20 @@ class ClassOrInterface(Type):
             raise NoSuchMethod("{0} has no method named {1}".format(self.name, name))
 
 
-class NullType(Type):
+class NullType(ClassOrInterface):
     """ The type of the value `null` in Java.
     """
     def __init__(self):
         super().__init__("null")
+        self.is_instantiable = False
+
+    def is_subtype_of(self, other):
+        """ True if this type can be used where the other type is expected.
+        """
+        if other.is_subtype_of(Type.object):
+            return True
+
+        return False
 
 
 class NoSuchMethod(Exception):

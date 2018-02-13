@@ -29,8 +29,8 @@ class TestNull(TypeTest):
             null.hashCode();
         """
         self.assertCompileError(
-            NoSuchMethod,  # Think: why shouldn’t this be NullPointerException?
-            "Cannot invoke method hashCode() on null",
+            JavaTypeError,  # Think: why shouldn’t this be NullPointerException?
+            "Type null does not have methods",
             MethodCall(
                 NullLiteral(),
                 "hashCode"))
