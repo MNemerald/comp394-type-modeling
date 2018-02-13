@@ -101,18 +101,51 @@ class MethodCall(Expression):
         Returns the compile-time type of this expression, i.e. the most specific type that describes
         all the possible values it could take on at runtime.
         """
-        return Variable.static_type(self.receiver).method_named(self.method_name).return_type
+        return self.receiver.static_type().method_named(self.method_name).return_type
 
     def check_types(self):
         """
         Validates the structure of this expression, checking for any logical inconsistencies in the
         child nodes and the operation this expression applies to them.
         """
-        # check for nonexistent method
-        try:
-            Variable.static_type(self.receiver).method_named(self.method_name)
-        except NoSuchMethod:
-            raise JavaTypeError("{0} has no method named {1}".format(names(self), self.method_name))
+
+        # if null
+        if self.receiver.static_type() is Type.null:
+            raise NoSuchMethod(
+                "Cannot invoke method {0}() on null".format(
+                self.method_name))
+
+        # attempt to call method on primitive
+        if not self.receiver.static_type().is_instantiable:
+            raise JavaTypeError(
+                "Type {0} does not have methods".format(
+                    self.receiver.static_type().name ))
+
+        # flags nonexistent method
+        self.receiver.static_type().method_named(self.method_name)
+
+        # flags wrong number of arguments
+        if len(self.args) != len(self.receiver.static_type().method_named(self.method_name).argument_types):
+            raise JavaTypeError(
+                "Wrong number of arguments for {0}.{1}(): expected {2}, got {3}".format(
+                    self.receiver.static_type().name,
+                    self.method_name,
+                    len(self.receiver.static_type().method_named(self.method_name).argument_types),
+                    len(self.args)))
+
+        # checks type of arguments
+        # flags wrong argument type
+        for i in range(len(self.args)):
+            if (self.args[i].check_types() != self.receiver.static_type().method_named(self.method_name).argument_types[i]
+                and not self.args[i].static_type().is_subtype_of(self.receiver.static_type().method_named(self.method_name).argument_types[i])):
+                raise JavaTypeError(
+                    "{0}.{1}() expects arguments of type {2}, but got {3}".format(
+                        self.receiver.static_type().name,
+                        self.method_name,
+                        names(self.receiver.static_type().method_named(self.method_name).argument_types),
+                        names([t.static_type() for t in self.args])))
+           #  self.args[i].check_types();
+           #  self.receiver.static_type().method_named(self.method_name).argument_types[i].check_types();
 
 
 class ConstructorCall(Expression):
@@ -135,7 +168,29 @@ class ConstructorCall(Expression):
         Validates the structure of this expression, checking for any logical inconsistencies in the
         child nodes and the operation this expression applies to them.
         """
-        pass
+
+        # flags attempts to instantiate primitives
+        if not self.instantiated_type.is_instantiable:
+            raise JavaTypeError(
+                "Type {0} is not instantiable".format(
+                    self.instantiated_type.name))
+
+        # flags wrong number of arguments
+        if len(self.args) != len(self.instantiated_type.constructor.argument_types):
+            raise JavaTypeError(
+                "Wrong number of arguments for {0} constructor: expected {1}, got {2}".format(
+                    self.instantiated_type.name,
+                    len(self.instantiated_type.constructor.argument_types),
+                    len(self.args)))
+
+        # flags wrong argument type
+        for i in range(len(self.args)):
+            if self.args[i].static_type() != self.instantiated_type.constructor.argument_types[i]:
+                raise JavaTypeError(
+                    "{0} constructor expects arguments of type {1}, but got {2}".format(
+                        self.instantiated_type.name,
+                        names(self.instantiated_type.constructor.argument_types),
+                        names([t.static_type() for t in self.args])))
 
 
 class JavaTypeError(Exception):

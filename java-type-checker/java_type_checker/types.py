@@ -12,7 +12,7 @@ class Type(object):
     def is_subtype_of(self, other):
         """ True if this type can be used where the other type is expected.
         """
-        if other is self or other in self.direct_supertypes:
+        if other is self or other in self.direct_supertypes or self is Type.null:
             return True
 
         for thing in self.direct_supertypes:
